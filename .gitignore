@@ -1,0 +1,7 @@
+node_modules/
+# Datos locales que crea la aplicación al usarla
+data/
+# Reportes de cobertura
+lcov.info
+coverage/
+.env
