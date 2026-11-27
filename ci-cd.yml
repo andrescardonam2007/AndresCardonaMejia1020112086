@@ -1,0 +1,118 @@
+# Flujo de CI/CD del CRUD de productos
+#
+# CI (integración continua): con cada push, GitHub Actions descarga el código,
+#    ejecuta las pruebas unitarias en tres versiones de Node.js y prueba el menú.
+# CD (entrega continua): si todas las pruebas pasan en la rama main, arma el
+#    paquete de la aplicación y lo publica como artefacto descargable.
+
+name: CI/CD
+
+on:
+  push:               # se ejecuta automáticamente con cada push, en cualquier rama
+  workflow_dispatch:  # permite ejecutarlo a mano desde la pestaña Actions
+
+permissions:
+  contents: read      # el flujo solo necesita leer el código
+
+defaults:
+  run:
+    shell: bash       # si falla un comando de una tubería (|), falla el paso
+
+jobs:
+  # ---------- Trabajo 1 (CI): pruebas en tres versiones de Node.js, en paralelo
+  pruebas:
+    name: Pruebas en Node.js ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node: [22, 24, 26]   # versiones LTS de Node.js con soporte
+
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v7
+
+      - name: Instalar Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Ejecutar las pruebas unitarias con cobertura
+        run: npm run coverage | tee resultado-pruebas.txt
+
+      - name: Probar el menú de la aplicación
+        run: |
+          # Crea un producto (opción 3), lista los productos (opción 1) y sale (opción 0)
+          printf '3\nProducto de prueba\nCreado por el CI/CD\n1000\n5\n1\n0\n' > entrada.txt
+          node index.js < entrada.txt | tee salida-menu.txt
+          grep -q "Producto creado con id 1" salida-menu.txt
+
+      - name: Escribir el resumen de las pruebas
+        if: always()
+        run: |
+          {
+            echo "### Pruebas en Node.js ${{ matrix.node }}"
+            echo '```'
+            sed -n '/tests [0-9]/,$p' resultado-pruebas.txt || echo "Sin resultados."
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------- Trabajo 2 (CD): entrega del paquete, solo si las pruebas pasan en main
+  entrega:
+    name: Entrega del paquete
+    needs: pruebas
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v7
+
+      - name: Instalar Node.js 26
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+
+      - name: Leer la versión de package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "numero=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Armar el paquete de la aplicación
+        env:
+          VERSION: ${{ steps.version.outputs.numero }}
+        run: |
+          mkdir paquete
+          cp -r index.js src package.json README.md paquete/
+          {
+            echo "CRUD de productos - versión $VERSION"
+            echo "Commit: $GITHUB_SHA"
+            echo "Generado por GitHub Actions el $(date -u '+%Y-%m-%d %H:%M') UTC"
+            echo ""
+            echo "Para usarlo, abre una terminal en esta carpeta y ejecuta: npm start"
+          } > paquete/LEEME.txt
+
+      - name: Publicar el paquete como artefacto
+        uses: actions/upload-artifact@v7
+        with:
+          name: crud-productos-v${{ steps.version.outputs.numero }}
+          path: paquete/
+          retention-days: 30
+
+      - name: Escribir el resumen de la entrega
+        env:
+          VERSION: ${{ steps.version.outputs.numero }}
+        run: |
+          {
+            echo "### Entrega lista: crud-productos v$VERSION"
+            echo ""
+            echo "| Dato | Valor |"
+            echo "|---|---|"
+            echo "| Versión | $VERSION |"
+            echo "| Commit | ${GITHUB_SHA:0:7} |"
+            echo "| Rama | $GITHUB_REF_NAME |"
+            echo ""
+            echo "Descarga el paquete en la sección **Artifacts** de esta página."
+          } >> "$GITHUB_STEP_SUMMARY"
