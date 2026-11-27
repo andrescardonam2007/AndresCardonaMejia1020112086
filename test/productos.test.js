@@ -149,6 +149,42 @@ describe('CRUD de productos', () => {
     });
   });
 
+  describe('Valor del inventario', () => {
+    it('éxito: es 0 cuando no hay productos', () => {
+      assert.equal(registro.valorInventario(), 0);
+    });
+
+    it('éxito: suma precio × cantidad de todos los productos', () => {
+      registro.crear(TECLADO); // 180000 × 10
+      registro.crear(MOUSE); //    65000 × 25
+
+      assert.equal(registro.valorInventario(), 3425000);
+    });
+
+    it('éxito: cambia al actualizar y al eliminar productos', () => {
+      const teclado = registro.crear(TECLADO);
+      const mouse = registro.crear(MOUSE);
+
+      registro.actualizar(teclado.id, { cantidad: 5 });
+      assert.equal(registro.valorInventario(), 2525000);
+
+      registro.eliminar(mouse.id);
+      assert.equal(registro.valorInventario(), 900000);
+    });
+
+    it('éxito: redondea el resultado a dos decimales', () => {
+      registro.crear({ nombre: 'Borrador', descripcion: 'Borrador de nata', precio: 0.1, cantidad: 3 });
+
+      assert.equal(registro.valorInventario(), 0.3);
+    });
+
+    it('error: falla si el archivo de datos está dañado', () => {
+      fs.writeFileSync(rutaArchivo, 'esto no es JSON', 'utf8');
+
+      assert.throws(() => registro.valorInventario(), /no contiene JSON válido/);
+    });
+  });
+
   describe('Actualizar', () => {
     it('éxito: actualiza solo los campos enviados', () => {
       const creado = registro.crear(TECLADO);

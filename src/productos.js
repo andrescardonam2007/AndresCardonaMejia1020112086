@@ -129,6 +129,15 @@ class RegistroProductos {
     return this.listar().filter((producto) => normalizar(producto.nombre).includes(buscado));
   }
 
+  /** LEER: valor total del inventario (suma de precio × cantidad de todos los productos). */
+  valorInventario() {
+    const total = this.listar().reduce(
+      (suma, producto) => suma + producto.precio * producto.cantidad,
+      0,
+    );
+    return Math.round(total * 100) / 100; // redondea a dos decimales
+  }
+
   /** ACTUALIZAR: cambia uno o varios campos de un producto existente. */
   actualizar(id, cambios) {
     const registro = this.#leerArchivo();

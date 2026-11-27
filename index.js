@@ -20,6 +20,7 @@ const MENU = `
 4. Actualizar producto
 5. Eliminar producto
 6. Buscar productos por nombre
+7. Ver valor total del inventario
 0. Salir`;
 
 async function preguntarTexto(etiqueta) {
@@ -97,6 +98,19 @@ async function buscarPorNombre() {
   mostrar(registro.buscarPorNombre(texto), 'Ningún producto coincide con la búsqueda.');
 }
 
+const PESOS = new Intl.NumberFormat('es-CO', {
+  style: 'currency',
+  currency: 'COP',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
+async function verValorInventario() {
+  const cantidad = registro.listar().length;
+  console.log(`Productos registrados: ${cantidad}`);
+  console.log(`Valor total del inventario: ${PESOS.format(registro.valorInventario())}`);
+}
+
 const OPCIONES = new Map([
   ['1', listar],
   ['2', buscar],
@@ -104,6 +118,7 @@ const OPCIONES = new Map([
   ['4', actualizar],
   ['5', eliminar],
   ['6', buscarPorNombre],
+  ['7', verValorInventario],
 ]);
 
 async function ejecutar(opcion) {
