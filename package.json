@@ -1,6 +1,6 @@
 {
   "name": "crud-productos",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "CRUD de productos con pruebas unitarias y CI/CD en GitHub Actions - Aplicaciones y servicios web (ITM)",
   "main": "index.js",
   "scripts": {
