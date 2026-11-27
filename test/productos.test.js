@@ -129,6 +129,26 @@ describe('CRUD de productos', () => {
     });
   });
 
+  describe('Buscar por nombre', () => {
+    it('éxito: encuentra productos sin importar mayúsculas ni tildes', () => {
+      const teclado = registro.crear(TECLADO);
+      const mouse = registro.crear(MOUSE);
+
+      assert.deepEqual(registro.buscarPorNombre('MECANICO'), [teclado]);
+      assert.deepEqual(registro.buscarPorNombre('inalám'), [mouse]);
+    });
+
+    it('éxito: devuelve una lista vacía si ningún nombre coincide', () => {
+      registro.crear(TECLADO);
+
+      assert.deepEqual(registro.buscarPorNombre('monitor'), []);
+    });
+
+    it('error: rechaza una búsqueda vacía', () => {
+      assert.throws(() => registro.buscarPorNombre('   '), ErrorValidacion);
+    });
+  });
+
   describe('Actualizar', () => {
     it('éxito: actualiza solo los campos enviados', () => {
       const creado = registro.crear(TECLADO);

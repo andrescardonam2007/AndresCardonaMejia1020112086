@@ -19,6 +19,7 @@ const MENU = `
 3. Crear producto
 4. Actualizar producto
 5. Eliminar producto
+6. Buscar productos por nombre
 0. Salir`;
 
 async function preguntarTexto(etiqueta) {
@@ -91,12 +92,18 @@ async function eliminar() {
   console.log(`Producto eliminado: ${eliminado.nombre}.`);
 }
 
+async function buscarPorNombre() {
+  const texto = await preguntarTexto('Texto a buscar en el nombre');
+  mostrar(registro.buscarPorNombre(texto), 'Ningún producto coincide con la búsqueda.');
+}
+
 const OPCIONES = new Map([
   ['1', listar],
   ['2', buscar],
   ['3', crear],
   ['4', actualizar],
   ['5', eliminar],
+  ['6', buscarPorNombre],
 ]);
 
 async function ejecutar(opcion) {

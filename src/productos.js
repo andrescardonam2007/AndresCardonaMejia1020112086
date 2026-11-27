@@ -32,6 +32,11 @@ function esTextoConContenido(valor) {
   return typeof valor === 'string' && valor.trim().length > 0;
 }
 
+/** Pasa un texto a minúsculas y le quita las tildes, para comparar sin importar cómo se escribió. */
+function normalizar(texto) {
+  return texto.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 /**
  * Revisa los datos de un producto y los devuelve limpios.
  * Si algún campo no cumple las reglas, lanza ErrorValidacion.
@@ -113,6 +118,15 @@ class RegistroProductos {
       throw new ErrorNoEncontrado(id);
     }
     return producto;
+  }
+
+  /** LEER: busca los productos cuyo nombre contiene el texto, sin importar mayúsculas ni tildes. */
+  buscarPorNombre(texto) {
+    if (!esTextoConContenido(texto)) {
+      throw new ErrorValidacion(['Escribe al menos una letra para buscar.']);
+    }
+    const buscado = normalizar(texto);
+    return this.listar().filter((producto) => normalizar(producto.nombre).includes(buscado));
   }
 
   /** ACTUALIZAR: cambia uno o varios campos de un producto existente. */
